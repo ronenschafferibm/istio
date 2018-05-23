@@ -117,8 +117,8 @@ func TestServiceConversion(t *testing.T) {
 			service.Hostname, serviceHostname(serviceName, namespace, domainSuffix))
 	}
 
-	if service.Address != ip {
-		t.Errorf("service IP incorrect => %q, want %q", service.Address, ip)
+	if service.Addresses[0] != ip {
+		t.Errorf("service IP incorrect => %q, want %q", service.Addresses[0], ip)
 	}
 
 	sa := service.ServiceAccounts

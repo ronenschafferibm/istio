@@ -128,9 +128,9 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	// Service and endpoints for hello.default - used in v1 pilot tests
 	hostname := model.Hostname("hello.default.svc.cluster.local")
 	server.EnvoyXdsServer.MemRegistry.AddService(hostname, &model.Service{
-		Hostname: hostname,
-		Address:  "10.10.0.3",
-		Ports:    testPorts(0),
+		Hostname:  hostname,
+		Addresses: model.BuildAddresses("10.10.0.3"),
+		Ports:     testPorts(0),
 	})
 	server.EnvoyXdsServer.MemRegistry.AddInstance(hostname, &model.ServiceInstance{
 		Endpoint: model.NetworkEndpoint{
@@ -148,8 +148,8 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 
 	// "local" service points to the current host and the in-process mixer http test endpoint
 	server.EnvoyXdsServer.MemRegistry.AddService("local.default.svc.cluster.local", &model.Service{
-		Hostname: "local.default.svc.cluster.local",
-		Address:  "10.10.0.4",
+		Hostname:  "local.default.svc.cluster.local",
+		Addresses: model.BuildAddresses("10.10.0.4"),
 		Ports: []*model.Port{
 			{
 				Name:                 "http",
@@ -175,9 +175,9 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	// Explicit test service, in the v2 memory registry. Similar with mock.MakeService,
 	// but easier to read.
 	server.EnvoyXdsServer.MemRegistry.AddService("service3.default.svc.cluster.local", &model.Service{
-		Hostname: "service3.default.svc.cluster.local",
-		Address:  "10.10.0.1",
-		Ports:    testPorts(0),
+		Hostname:  "service3.default.svc.cluster.local",
+		Addresses: model.BuildAddresses("10.10.0.1"),
+		Ports:     testPorts(0),
 	})
 
 	server.EnvoyXdsServer.MemRegistry.AddInstance("service3.default.svc.cluster.local", &model.ServiceInstance{
@@ -211,8 +211,8 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 
 	// Mock ingress service
 	server.EnvoyXdsServer.MemRegistry.AddService("istio-ingress.istio-system.svc.cluster.local", &model.Service{
-		Hostname: "istio-ingress.istio-system.svc.cluster.local",
-		Address:  "10.10.0.2",
+		Hostname:  "istio-ingress.istio-system.svc.cluster.local",
+		Addresses: model.BuildAddresses("10.10.0.2"),
 		Ports: []*model.Port{
 			{
 				Name:                 "http",
@@ -260,8 +260,8 @@ func initLocalPilotTestEnv(t *testing.T) *bootstrap.Server {
 	//RouteConf Service4 is using port 80, to test that we generate multiple clusters (regression)
 	// service4 has no endpoints
 	server.EnvoyXdsServer.MemRegistry.AddService("service4.default.svc.cluster.local", &model.Service{
-		Hostname: "service4.default.svc.cluster.local",
-		Address:  "10.1.0.4",
+		Hostname:  "service4.default.svc.cluster.local",
+		Addresses: model.BuildAddresses("10.1.0.4"),
 		Ports: []*model.Port{
 			{
 				Name:                 "http-main",

@@ -707,7 +707,7 @@ func buildOutboundTCPListeners(mesh *meshconfig.MeshConfig, node model.Proxy,
 		for _, servicePort := range service.Ports {
 			switch servicePort.Protocol {
 			case model.ProtocolTCP, model.ProtocolHTTPS, model.ProtocolMongo, model.ProtocolRedis:
-				if service.LoadBalancingDisabled || service.Address == "" ||
+				if service.LoadBalancingDisabled || len(service.Addresses) == 0 ||
 					node.Type == model.Router {
 					// ensure only one wildcard listener is created per port if its headless service
 					// or if its for a Router (where there is one wildcard TCP listener per port)
@@ -742,12 +742,13 @@ func buildOutboundTCPListeners(mesh *meshconfig.MeshConfig, node model.Proxy,
 					tcpListeners = append(tcpListeners, listener)
 				} else {
 					cluster := BuildOutboundCluster(service.Hostname, servicePort, nil, service.External())
-					route := BuildTCPRoute(cluster, []string{service.Address})
+					route := BuildTCPRoute(cluster, service.Addresses)
 					config := &TCPRouteConfig{Routes: []*TCPRoute{route}}
-					listener := buildTCPListener(
-						config, service.Address, servicePort.Port, servicePort.Protocol)
+					for _, ip := range service.Addresses {
+						listener := buildTCPListener(config, ip, servicePort.Port, servicePort.Protocol)
+						tcpListeners = append(tcpListeners, listener)
+					}
 					tcpClusters = append(tcpClusters, cluster)
-					tcpListeners = append(tcpListeners, listener)
 				}
 			}
 		}

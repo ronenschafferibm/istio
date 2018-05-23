@@ -71,7 +71,7 @@ func (sd *ServiceDiscovery) Services() ([]*model.Service, error) {
 	for _, internalRoute := range internalRoutesResp.GetInternalRoutes() {
 		services = append(services, &model.Service{
 			Hostname:     model.Hostname(internalRoute.Hostname),
-			Address:      internalRoute.Vip,
+			Addresses:    model.BuildAddresses(internalRoute.Vip),
 			Ports:        []*model.Port{internalRouteServicePort},
 			MeshExternal: false,
 			Resolution:   model.ClientSideLB,
@@ -149,7 +149,7 @@ func (sd *ServiceDiscovery) InstancesByPort(hostname model.Hostname, _ int, _ mo
 					},
 					Service: &model.Service{
 						Hostname:     hostname,
-						Address:      internalRoute.Vip,
+						Addresses:    model.BuildAddresses(internalRoute.Vip),
 						Ports:        []*model.Port{internalRouteServicePort},
 						MeshExternal: false,
 						Resolution:   model.ClientSideLB,

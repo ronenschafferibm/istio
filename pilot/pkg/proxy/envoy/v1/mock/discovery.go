@@ -75,8 +75,8 @@ func NewDiscovery(services map[model.Hostname]*model.Service, versions int) *Ser
 // MakeService creates a mock service
 func MakeService(hostname model.Hostname, address string) *model.Service {
 	return &model.Service{
-		Hostname: hostname,
-		Address:  address,
+		Hostname:  hostname,
+		Addresses: model.BuildAddresses(address),
 		Ports: []*model.Port{
 			{
 				Name:                 PortHTTPName,
@@ -112,7 +112,7 @@ func MakeService(hostname model.Hostname, address string) *model.Service {
 func MakeExternalHTTPService(hostname, external model.Hostname, address string) *model.Service {
 	return &model.Service{
 		Hostname:     hostname,
-		Address:      address,
+		Addresses:    model.BuildAddresses(address),
 		ExternalName: external,
 		Ports: []*model.Port{{
 			Name:                 "http",
@@ -127,7 +127,7 @@ func MakeExternalHTTPService(hostname, external model.Hostname, address string) 
 func MakeExternalHTTPSService(hostname, external model.Hostname, address string) *model.Service {
 	return &model.Service{
 		Hostname:     hostname,
-		Address:      address,
+		Addresses:    model.BuildAddresses(address),
 		ExternalName: external,
 		Ports: []*model.Port{{
 			Name:                 "https",
@@ -180,7 +180,7 @@ func MakeIP(service *model.Service, version int) string {
 	if service.External() {
 		return ""
 	}
-	ip := net.ParseIP(service.Address).To4()
+	ip := net.ParseIP(service.Addresses[0]).To4()
 	ip[2] = byte(1)
 	ip[3] = byte(version)
 	return ip.String()

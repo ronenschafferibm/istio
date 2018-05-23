@@ -45,7 +45,7 @@ func convertServices(apps []*application, hostnames map[model.Hostname]bool) map
 			if service == nil {
 				service = &model.Service{
 					Hostname:     model.Hostname(instance.Hostname),
-					Address:      "",
+					Addresses:    model.BuildAddresses(),
 					Ports:        make(model.PortList, 0),
 					ExternalName: "",
 					MeshExternal: false,

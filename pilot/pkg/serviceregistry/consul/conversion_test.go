@@ -131,8 +131,8 @@ func TestConvertInstance(t *testing.T) {
 			out.Service.Hostname, serviceHostname(name))
 	}
 
-	if out.Service.Address != ip {
-		t.Errorf("convertInstance() bad service address => %q, want %q", out.Service.Address, ip)
+	if out.Service.Addresses[0] != ip {
+		t.Errorf("convertInstance() bad service address => %q, want %q", out.Service.Addresses, ip)
 	}
 
 	if len(out.Service.Ports) != 1 {

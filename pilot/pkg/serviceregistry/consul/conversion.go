@@ -92,7 +92,7 @@ func convertService(endpoints []*api.CatalogService) *model.Service {
 
 	out := &model.Service{
 		Hostname:     serviceHostname(name),
-		Address:      addr,
+		Addresses:    model.BuildAddresses(addr),
 		Ports:        svcPorts,
 		ExternalName: model.Hostname(externalName),
 		MeshExternal: meshExternal,
@@ -127,9 +127,9 @@ func convertInstance(instance *api.CatalogService) *model.ServiceInstance {
 		},
 		AvailabilityZone: instance.Datacenter,
 		Service: &model.Service{
-			Hostname: serviceHostname(instance.ServiceName),
-			Address:  instance.ServiceAddress,
-			Ports:    model.PortList{port},
+			Hostname:  serviceHostname(instance.ServiceName),
+			Addresses: model.BuildAddresses(instance.ServiceAddress),
+			Ports:     model.PortList{port},
 			// TODO ExternalName come from metadata?
 			ExternalName: model.Hostname(externalName),
 			MeshExternal: meshExternal,

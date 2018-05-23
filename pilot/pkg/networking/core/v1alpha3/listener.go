@@ -332,7 +332,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(env model.En
 			clusterName := model.BuildSubsetKey(model.TrafficDirectionOutbound, "",
 				service.Hostname, servicePort.Port)
 
-			listenAddress := WildcardAddress
+			listenAddresses := []string{WildcardAddress}
 			var addresses []string
 			var listenerMapKey string
 			listenerOpts := buildListenerOpts{
@@ -347,7 +347,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(env model.En
 			switch plugin.ModelProtocolToListenerType(servicePort.Protocol) {
 			// TODO: Set SNI for HTTPS
 			case plugin.ListenerTypeHTTP:
-				listenerMapKey = fmt.Sprintf("%s:%d", listenAddress, servicePort.Port)
+				listenerMapKey = fmt.Sprintf("%s:%d", listenAddresses[0], servicePort.Port)
 				if l, exists := listenerMap[listenerMapKey]; exists {
 					if !strings.HasPrefix(l.Name, "http") {
 						conflictingOutbound.Add(1)
@@ -378,14 +378,16 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(env model.En
 				}}
 			case plugin.ListenerTypeTCP:
 				if service.Resolution != model.Passthrough {
-					listenAddress = service.GetServiceAddressForProxy(&node)
-					addresses = []string{listenAddress}
+					listenAddresses = service.GetServiceAddressesForProxy(&node)
+					addresses = model.BuildAddresses(listenAddresses...)
 				}
 
-				listenerMapKey = fmt.Sprintf("%s:%d", listenAddress, servicePort.Port)
-				if n, exists := listenerMap[listenerMapKey]; exists {
-					log.Warnf("Multiple TCP listener definitions for %s %v %s", listenerMapKey, n, service.Hostname)
-					continue
+				for _, listenAddress := range listenAddresses {
+					listenerMapKey = fmt.Sprintf("%s:%d", listenAddress, servicePort.Port)
+					if n, exists := listenerMap[listenerMapKey]; exists {
+						log.Warnf("Multiple TCP listener definitions for %s %v %s", listenerMapKey, n, service.Hostname)
+						continue
+					}
 				}
 				listenerOpts.filterChainOpts = []*filterChainOpts{{
 					networkFilters: buildOutboundNetworkFilters(clusterName, addresses, servicePort),
@@ -397,44 +399,46 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(env model.En
 
 			// call plugins
 
-			listenerOpts.ip = listenAddress
-			l := buildListener(listenerOpts)
-			mutable := &plugin.MutableObjects{
-				Listener:     l,
-				FilterChains: make([]plugin.FilterChain, len(l.FilterChains)),
-			}
-
-			for _, p := range configgen.Plugins {
-				params := &plugin.InputParams{
-					ListenerType:   plugin.ModelProtocolToListenerType(servicePort.Protocol),
-					Env:            &env,
-					Node:           &node,
-					ProxyInstances: proxyInstances,
-					Service:        service,
+			for _, listenAddress := range listenAddresses {
+				listenerOpts.ip = listenAddress
+				l := buildListener(listenerOpts)
+				mutable := &plugin.MutableObjects{
+					Listener:     l,
+					FilterChains: make([]plugin.FilterChain, len(l.FilterChains)),
 				}
 
-				if err := p.OnOutboundListener(params, mutable); err != nil {
-					log.Warn(err.Error())
+				for _, p := range configgen.Plugins {
+					params := &plugin.InputParams{
+						ListenerType:   plugin.ModelProtocolToListenerType(servicePort.Protocol),
+						Env:            &env,
+						Node:           &node,
+						ProxyInstances: proxyInstances,
+						Service:        service,
+					}
+
+					if err := p.OnOutboundListener(params, mutable); err != nil {
+						log.Warn(err.Error())
+					}
 				}
-			}
 
-			// Filters are serialized one time into an opaque struct once we have the complete list.
-			if err := marshalFilters(mutable.Listener, listenerOpts, mutable.FilterChains); err != nil {
-				log.Warna("buildSidecarOutboundListeners: ", err.Error())
-				continue
-			}
+				// Filters are serialized one time into an opaque struct once we have the complete list.
+				if err := marshalFilters(mutable.Listener, listenerOpts, mutable.FilterChains); err != nil {
+					log.Warna("buildSidecarOutboundListeners: ", err.Error())
+					continue
+				}
 
-			// By default we require SNI; if there's only one filter chain then we know there's either 0 or 1 cert,
-			// therefore SNI is not required.
-			if len(mutable.Listener.FilterChains) == 1 && mutable.Listener.FilterChains[0].TlsContext != nil {
-				mutable.Listener.FilterChains[0].TlsContext.RequireSni = boolFalse
-			}
+				// By default we require SNI; if there's only one filter chain then we know there's either 0 or 1 cert,
+				// therefore SNI is not required.
+				if len(mutable.Listener.FilterChains) == 1 && mutable.Listener.FilterChains[0].TlsContext != nil {
+					mutable.Listener.FilterChains[0].TlsContext.RequireSni = boolFalse
+				}
 
-			if log.DebugEnabled() && len(mutable.Listener.FilterChains) > 1 {
-				log.Debuga("buildSidecarOutboundListeners: multiple filter chain listener: ", mutable.Listener.Name)
-			}
+				if log.DebugEnabled() && len(mutable.Listener.FilterChains) > 1 {
+					log.Debuga("buildSidecarOutboundListeners: multiple filter chain listener: ", mutable.Listener.Name)
+				}
 
-			listenerMap[listenerMapKey] = mutable.Listener
+				listenerMap[listenerMapKey] = mutable.Listener
+			}
 		}
 	}
 

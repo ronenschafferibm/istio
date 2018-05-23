@@ -93,9 +93,9 @@ func (c *Controller) Services() ([]*model.Service, error) {
 			// only use the 'primary' VIP ?
 			if r.ClusterID != "" {
 				if sp.ClusterVIPs == nil {
-					sp.ClusterVIPs = make(map[string]string)
+					sp.ClusterVIPs = make(map[string][]string)
 				}
-				sp.ClusterVIPs[r.ClusterID] = s.Address
+				sp.ClusterVIPs[r.ClusterID] = model.BuildAddresses(s.Addresses...)
 				smap[s.Hostname] = sp
 			}
 		}

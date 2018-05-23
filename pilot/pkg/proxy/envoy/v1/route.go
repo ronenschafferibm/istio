@@ -335,8 +335,8 @@ func BuildVirtualHost(svc *model.Service, port *model.Port, suffix []string, rou
 	}
 
 	// add service cluster IP domain name
-	if len(svc.Address) > 0 {
-		hosts = append(hosts, svc.Address)
+	if len(svc.Addresses) > 0  {
+		hosts = append(hosts, svc.Addresses...)
 	}
 
 	// add ports

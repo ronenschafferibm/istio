@@ -86,7 +86,7 @@ func (configgen *ConfigGeneratorImpl) BuildSidecarOutboundHTTPRouteConfig(env mo
 			if svcPort, exists := svc.Ports.GetByPort(port); exists {
 				nameToServiceMap[svc.Hostname] = &model.Service{
 					Hostname:     svc.Hostname,
-					Address:      svc.Address,
+					Addresses:    model.BuildAddresses(svc.Addresses...),
 					ClusterVIPs:  svc.ClusterVIPs,
 					MeshExternal: svc.MeshExternal,
 					Ports:        []*model.Port{svcPort},
@@ -166,13 +166,15 @@ func buildVirtualHostDomains(service *model.Service, port int, node model.Proxy)
 	domains := []string{service.Hostname.String(), fmt.Sprintf("%s:%d", service.Hostname, port)}
 	domains = append(domains, generateAltVirtualHosts(service.Hostname.String(), port, node.Domain)...)
 
-	if len(service.Address) > 0 {
-		svcAddr := service.GetServiceAddressForProxy(&node)
-		// add a vhost match for the IP (if its non CIDR)
-		cidr := util.ConvertAddressToCidr(svcAddr)
-		if cidr.PrefixLen.Value == 32 {
-			domains = append(domains, svcAddr)
-			domains = append(domains, fmt.Sprintf("%s:%d", svcAddr, port))
+	if len(service.Addresses) > 0 {
+		svcAddrs := service.GetServiceAddressesForProxy(&node)
+		for _, svcAddr := range svcAddrs {
+			// add a vhost match for the IP (if its non CIDR)
+			cidr := util.ConvertAddressToCidr(svcAddr)
+			if cidr.PrefixLen.Value == 32 {
+				domains = append(domains, svcAddr)
+				domains = append(domains, fmt.Sprintf("%s:%d", svcAddr, port))
+			}
 		}
 	}
 	return domains

@@ -50,12 +50,12 @@ type Service struct {
 	// Hostname of the service, e.g. "catalog.mystore.com"
 	Hostname Hostname `json:"hostname"`
 
-	// Address specifies the service IPv4 address of the load balancer
-	Address string `json:"address,omitempty"`
+	// Addresses specifies the service IPv4 addresses of the load balancer
+	Addresses []string `json:"addresses,omitempty"`
 
-	// ClusterVIPs specifies the service address of the load balancer
+	// ClusterVIPs specifies the service addresses of the load balancer
 	// in each of the clusters where the service resides
-	ClusterVIPs map[string]string `json:"cluster-vips,omitempty"`
+	ClusterVIPs map[string][]string `json:"cluster-vips,omitempty"`
 
 	// Ports is the set of network ports where the service is listening for
 	// connections
@@ -709,10 +709,21 @@ func ParseLabelsString(s string) Labels {
 	return tag
 }
 
-// GetServiceAddressForProxy returns a Service's IP address specific to the cluster where the node resides
-func (s Service) GetServiceAddressForProxy(node *Proxy) string {
-	if node.ClusterID != "" && s.ClusterVIPs[node.ClusterID] != "" {
-		return s.ClusterVIPs[node.ClusterID]
+// GetServiceAddressesForProxy returns a Service's IP addresses specific to the cluster where the node resides
+func (s Service) GetServiceAddressesForProxy(node *Proxy) []string {
+	if node.ClusterID != "" && len(s.ClusterVIPs[node.ClusterID]) > 0 {
+		return BuildAddresses(s.ClusterVIPs[node.ClusterID]...)
 	}
-	return s.Address
+	return BuildAddresses(s.Addresses...)
+}
+
+// BuildAddresses returns a slice with non empty addresses
+func BuildAddresses(addresses ...string) []string {
+	out := make([]string, 0)
+	for _, addr := range addresses {
+		if addr != "" {
+			out = append(out, addr)
+		}
+	}
+	return out
 }

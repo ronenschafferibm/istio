@@ -243,9 +243,9 @@ func TestAdsUpdate(t *testing.T) {
 	// Old style cluster.
 	// TODO: convert tests (except eds) to new style.
 	server.EnvoyXdsServer.MemRegistry.AddService("adsupdate.default.svc.cluster.local", &model.Service{
-		Hostname: "adsupdate.default.svc.cluster.local",
-		Address:  "10.11.0.1",
-		Ports:    testPorts(0),
+		Hostname:  "adsupdate.default.svc.cluster.local",
+		Addresses: model.BuildAddresses("10.11.0.1"),
+		Ports:     testPorts(0),
 	})
 	_ = server.EnvoyXdsServer.MemRegistry.AddEndpoint("adsupdate.default.svc.cluster.local",
 		"http-main", 2080, "10.2.0.1", 1080)

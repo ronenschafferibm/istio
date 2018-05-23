@@ -152,13 +152,13 @@ func TestServicesForMultiCluster(t *testing.T) {
 	}
 
 	//Now verify ClusterVIPs for each service
-	ClusterVIPs := map[model.Hostname]map[string]string{
+	ClusterVIPs := map[model.Hostname]map[string][]string{
 		mock.HelloService.Hostname: {
-			"cluster-1": "10.1.1.0",
-			"cluster-2": "10.1.2.0",
+			"cluster-1": []string{"10.1.1.0"},
+			"cluster-2": []string{"10.1.2.0"},
 		},
 		mock.WorldService.Hostname: {
-			"cluster-2": "10.2.0.0",
+			"cluster-2": []string{"10.2.0.0"},
 		},
 	}
 	for _, svc := range services {
