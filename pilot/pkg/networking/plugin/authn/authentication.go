@@ -283,8 +283,45 @@ func (Plugin) OnOutboundListener(in *plugin.InputParams, mutable *plugin.Mutable
 // Can be used to add additional filters (e.g., mixer filter) or add more stuff to the HTTP connection manager
 // on the inbound path
 func (Plugin) OnInboundListener(in *plugin.InputParams, mutable *plugin.MutableObjects) error {
-	if in.Node.Type != model.Sidecar {
-		// Only care about sidecar.
+	//if in.Node.Type != model.Sidecar {
+	//	// Only care about sidecar.
+	//	return nil
+	//}
+
+	if in.Node.Type == model.Router {
+		log.Errorf("**** in router: %#v", in.Node)
+		for i := range mutable.Listener.FilterChains {
+			mutable.Listener.FilterChains[i].TlsContext = &auth.DownstreamTlsContext{
+				CommonTlsContext: &auth.CommonTlsContext{
+					TlsCertificates: []*auth.TlsCertificate{
+						{
+							CertificateChain: &core.DataSource{
+								Specifier: &core.DataSource_Filename{
+									Filename: model.AuthCertsPath + model.CertChainFilename,
+								},
+							},
+							PrivateKey: &core.DataSource{
+								Specifier: &core.DataSource_Filename{
+									Filename: model.AuthCertsPath + model.KeyFilename,
+								},
+							},
+						},
+					},
+					ValidationContext: &auth.CertificateValidationContext{
+						TrustedCa: &core.DataSource{
+							Specifier: &core.DataSource_Filename{
+								Filename: model.AuthCertsPath + model.RootCertFilename,
+							},
+						},
+					},
+					// Same as ListenersALPNProtocols defined in listener. Need to move that constant else where in order to share.
+					AlpnProtocols: []string{"h2", "http/1.1"},
+				},
+				RequireClientCertificate: &types.BoolValue{
+					Value: true,
+				},
+			}
+		}
 		return nil
 	}
 	authnPolicy := model.GetConsolidateAuthenticationPolicy(

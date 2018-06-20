@@ -123,6 +123,9 @@ func (configgen *ConfigGeneratorImpl) buildGatewayListeners(env model.Environmen
 			if err = p.OnOutboundListener(params, mutable); err != nil {
 				log.Warna("buildGatewayListeners: failed to build listener for gateway: ", err.Error())
 			}
+			if err = p.OnInboundListener(params, mutable); err != nil {
+				log.Warna("buildGatewayListeners: failed to build listener for gateway: ", err.Error())
+			}
 		}
 
 		// Filters are serialized one time into an opaque struct once we have the complete list.
